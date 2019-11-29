@@ -8,7 +8,7 @@
 
 module blackjack_states
 (
-	input	clk, in, reset,
+	input	clk, in, reset, hit, stay
 	output reg [1:0] out
 );
 
