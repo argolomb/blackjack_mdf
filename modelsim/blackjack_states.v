@@ -1,17 +1,8 @@
-// Quartus Prime Verilog Template
-// 4-State Mealy state machine
-
-// A Mealy machine has outputs that depend on both the state and 
-// the inputs.  When the inputs change, the outputs are updated
-// immediately, without waiting for a clock edge.  The outputs
-// can be written more than once per state or per clock cycle.
-
 module blackjack_states
 (
 	input	clk, in, reset, hit, stay
 	output reg [1:0] out
 );
-
 	// Declare state register
 	reg		[2:0]state;
 
@@ -132,42 +123,22 @@ endmodule
 
 	begin
 			case (state)
-				S0:
-					if (in)
-					begin
-						out = 2'b00;
-					end
-					else
-					begin
-						out = 2'b10;
-					end
-				S1:
-					if (in)
-					begin
-						out = 2'b01;
-					end
-					else
-					begin
-						out = 2'b00;
-					end
-				S2:
-					if (in)
-					begin
-						out = 2'b10;
-					end
-					else
-					begin
-						out = 2'b01;
-					end
-				S3:
-					if (in)
-					begin
-						out = 2'b11;
-					end
-					else
-					begin
-						out = 2'b00;
-					end
+				START:
+					
+				PL_CARD1:
+					
+				DL_CARD1:
+					
+				PL_CARD2:
+
+                DL_CARD2:
+
+                GAME:
+
+                PL_TURN:
+
+                DL_TURN:
+				
 			endcase
 	end
 
