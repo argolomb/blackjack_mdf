@@ -1,0 +1,8 @@
+/home/miguel/Documents/blackjack_mdf/modelsim/blackjack_states_tb.sv {1 {vlog -work work -sv -stats=none /home/miguel/Documents/blackjack_mdf/modelsim/blackjack_states_tb.sv
+Model Technology ModelSim - Intel FPGA Edition vlog 10.5b Compiler 2016.10 Oct  5 2016
+-- Compiling module blackjack_states_tb
+
+Top level modules:
+	blackjack_states_tb
+
+} {} {}}
