@@ -4,14 +4,14 @@ module blackjack_states
 
 	output reg card_out,mem_ctrl_rd, mem_ctrl_wr, win, lose, tie, 
 	
-	input [7:0] card_in, 
+	input [3:0] card_in, 
 	output reg [5:0] card_ctrl,
 
 	output reg [7:0] player_hand,
 	output reg [7:0] dealer_hand,
 
-	output reg [7:0] player_action,
-	output reg [7:0] dealer_action
+	output reg [1:0]player_action,
+	output reg [1:0] dealer_action
  );
 	// Declare state register
 	reg	[2:0]state;
@@ -25,9 +25,12 @@ module blackjack_states
 	has_ace_p,
 	has_ace_d,
 	stay_d,
+	stay_d_wire,
 	stay_p, 
 	mix_cards, 
-	hit_d, hit_p, 
+	hit_d, 
+	hit_d_wire,
+	hit_p, 
 	bj_d_wire,
 	bj_p_wire,
 	burst_p_wire, 
@@ -88,22 +91,19 @@ module blackjack_states
 						end
 				PL_TURN: 
 					begin //GAME OR DL_TURN OR PL_TURN
-						if(burst_p)
+						if(burst_p_wire)
 							begin
 								state<=GAME;
 							end
+						else if(stay)
+								begin
+									state<=DL_TURN;
+								end
 						else
 							begin
 								state<=PL_TURN;
 							end
-						if(stay)
-							begin
-								state<=DL_TURN;
-							end
-						else
-							begin
-								state<=PL_TURN;
-							end
+							
 					end 
 
 				GAME: //STAY HERE TO MAKE MATH 
@@ -134,8 +134,11 @@ module blackjack_states
 					sum_p<=0;
 					sum_d<=0;
 					has_ace_p<=0;
-					burst_d<=0;
-					burst_p<=0;
+					has_ace_d<=0;
+					win=0;
+					lose=0;
+					tie=0;
+									
 				end
 			PL_CARD1: //GET A CARD				
 				if(card_in == 11)
@@ -174,10 +177,6 @@ module blackjack_states
 					begin
 						sum_p=sum_p+11;
 					end
-				else if(sum_p>21) 
-					begin
-						burst_p<=1;
-					end
 					
 			DL_CARD2: //GET A CARD **** SET DEALER HAND
 				if(card_in == 11)
@@ -198,7 +197,7 @@ module blackjack_states
 
 			PL_TURN: //WAIT FOR HIT OR STAY BUTTON IF SUM 				
 			
-				if (hit && ~burst_p_wire) begin
+				if ((hit && ~burst_p_wire)||(stay_d)) begin
 					if(card_in == 11)
 						begin
 							sum_p<=sum_p+card_in-1;
@@ -214,36 +213,39 @@ module blackjack_states
 							sum_p<=sum_p+card_in;
 							mem_addr<=mem_addr+1;
 						end					
-				end
-				else if(stay && ~burst_p_wire)
-					begin
-						stay_d<=1;
-					end				
+				end		
 			
 			DL_TURN: ////WAIT FOR HIT OR STAY BUTTON IF SUM < 21 ELSE BURST_DEALER **** PLAYER WON
-
-				if (hit && ~burst_d_wire) begin
-					if(card_in == 11)
+				begin
+					if ((hit_d && ~burst_d_wire)||(stay)) begin
+						if(card_in == 11)
+							begin
+								sum_d<=sum_d+card_in-1;
+								has_ace_d<=1;
+								mem_addr<=mem_addr+1;
+							end
+						if (card_in == 1 && has_ace_d) 
+							begin
+								sum_d=sum_d+11;
+							end
+						else
+							begin
+								sum_d<=sum_d+card_in;
+								mem_addr<=mem_addr+1;
+							end					
+					end				
+				
+					else if (sum_d<=16)
 						begin
-							sum_d<=sum_d+card_in-1;
-							has_ace_d<=1;
-							mem_addr<=mem_addr+1;
+							hit_d_wire<=1;
+							stay_d_wire<=0;
 						end
-					if (card_in == 1 && has_ace_d) 
+					else if (sum_d>=17) 
 						begin
-							sum_d=sum_d+11;
+							stay_d_wire<=1;
+							hit_d_wire<=0;
 						end
-					else
-						begin
-							sum_d<=sum_d+card_in;
-							mem_addr<=mem_addr+1;
-						end					
 				end
-
-				else if(stay && ~burst_d_wire)
-					begin
-						stay_p<=1;
-					end
 
 			 /*
 			 TIE IF PLAYER_HAND == DEALER_HAND OR BJ_P AND BJ_D OR BURST_PLAYER
@@ -252,15 +254,15 @@ module blackjack_states
 			 */
 			GAME:
 				
-				if((sum_d == sum_p)||(burst_p && burst_d))
+				if((sum_d == sum_p)||(burst_p_wire && burst_d_wire))
 					begin
 						tie<=1;
 					end
-				else if ((sum_d==21 && sum_p<21)||(burst_p)) 
+				else if ((sum_d==21 && sum_p<21)||(burst_p_wire)) 
 					begin
 						lose<=1;
 					end
-				else if ((sum_p==21 && sum_d<21)||(burst_d))
+				else if ((sum_p==21 && sum_d<21)||(burst_d_wire))
 					begin
 						win<=1;
 					end
@@ -269,23 +271,24 @@ module blackjack_states
 	end
 
 always @ (*) begin
-	burst_p_wire<=0;
-	burst_d_wire<=0;
-	bj_p_wire<=0;
-	bj_d_wire<=0;
-
+	burst_p_wire=0;
+	burst_d_wire=0;
+	bj_p_wire=0;
+	bj_d_wire=0;
+	stay_d_wire=0;
+	hit_d_wire=0;
 
 	if(sum_p>21) 
 		begin
-			burst_p_wire=1;
+			burst_p_wire<=1;
 		end
 	else if (sum_p==21)
 		begin
-		bj_p_wire=1;
+		bj_p_wire<=1;
 		end
 	else if(sum_d>21) 
 		begin
-			burst_d_wire=1;
+			burst_d_wire<=1;
 		end
 	else if(sum_d==21)
 		begin
@@ -298,6 +301,8 @@ always @ (posedge clk) begin
 	burst_d<=burst_d_wire;
 	bj_p<=bj_p_wire;
 	bj_d<=bj_d_wire;
+	hit_d<=hit_d_wire;
+	stay_d<=stay_d_wire;
 end
 
 endmodule
