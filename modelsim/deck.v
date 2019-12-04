@@ -1,36 +1,80 @@
 module deck
 (
-	input clk ,reset ,mix_cards;
+	input clk ,reset ,shuffle, get_card, [5:0]addr_aux;
     
-    input reg [5:0] card_ctrl;
-        
-    output reg  [7:0] card;
+    output card_ready, shuffle_ok;
+            
+    output reg  [3:0]card_out, [5:0]mem_addr;
 
 );
 
-reg [1:0] state
+reg [2:0] state;
 
-reg [15:0] cards[0:12]
+reg [3:0] cards[0:12];
 
-reg [15:0] deck [0:52]
+reg shuffle_ok;
 
+reg i;
 
-parameter SET_CARD=0, SHUFFLE_DECK=1;
+reg [3:0]deck_aux[0:52];
 
-always @ (posedge clk or posedge reset or posedge mix_cards) 
+parameter SHUFFLE_DECK=0, GET_CARD=1, CARD_OUT=2;
 
-begin
-    if(reset)
-    state<=SHUFFLE_DECK;
-    else
-        case (state)
-            SET_CARD: // OUTPUT 8-BITS
+always @ (posedge clk or posedge reset) 
 
-            SHUFFLE_DECK: 
-            
-        endcase
+    begin
+        if(reset)
+        state<=SHUFFLE_DECK;
+        else
+            case (state)
+                SHUFFLE_DECK:
+                    if (shufle_ok) begin
+                        state<=GET_CARD;
+                    end
+                    else begin
+                        state<=SHUFFLE_DECK;
+                    end
+                GET_CARD:
+                    if (get_card) begin
+                        state<=CARD_OUT;
+                    end
+                    else begin
+                    state<=GET_CARD;
+                    end
+                CARD_OUT:
+                    if (card_out) begin
+                        state<=GET_CARD;
+                    end
+                    else begin
+                        state<=CARD_OUT;
+            endcase
+        end
     end
-end
+
+
+
+//Condicional
+always @ (posedge clk) 
+
+    begin
+            case (state)
+                SHUFFLE_DECK:
+                    begin
+                        shuffle<=1;
+                    end
+                GET_CARD:
+                    begin
+                        if(shuffle_ok)
+                        card_out<=
+                    end
+
+                CARD_OUT:
+                    begin
+                        
+                    end
+            endcase
+        end
+    end
 
 
 endmodule

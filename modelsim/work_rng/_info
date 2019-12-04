@@ -1,0 +1,73 @@
+m255
+K4
+z2
+13
+!s112 1.1
+!i10d 8192
+!i10e 25
+!i10f 100
+cModel Technology
+Z0 d/home/miguel/Documents/blackjack_mdf/modelsim
+vrng
+!s110 1575483569
+!i10b 1
+!s100 0P:8OTPEQnYe1fNIS_z?V2
+I_@R;jS;Nm[n0Mk>]8EG>E0
+Z1 VDg1SIo80bB@j0V0VzS_@n1
+R0
+w1575483561
+8/home/miguel/Documents/blackjack_mdf/modelsim/rng.v
+F/home/miguel/Documents/blackjack_mdf/modelsim/rng.v
+L0 62
+Z2 OV;L;10.5b;63
+r1
+!s85 0
+31
+!s108 1575483569.000000
+!s107 /home/miguel/Documents/blackjack_mdf/modelsim/rng.v|
+!s90 -reportprogress|300|-work|work_rng|-stats=none|/home/miguel/Documents/blackjack_mdf/modelsim/rng.v|
+!i113 1
+Z3 o-work work_rng
+Z4 tCvgOpt 0
+vrng_tb
+!s110 1575483906
+!i10b 1
+!s100 =iK@Oa<5`hIn;<HRoC93_0
+I04Y[7944cf@2gkbhXbDXJ0
+R1
+R0
+w1575483894
+Z5 8/home/miguel/Documents/blackjack_mdf/modelsim/rng_tb.v
+Z6 F/home/miguel/Documents/blackjack_mdf/modelsim/rng_tb.v
+L0 3
+R2
+r1
+!s85 0
+31
+!s108 1575483906.000000
+!s107 /home/miguel/Documents/blackjack_mdf/modelsim/rng_tb.v|
+Z7 !s90 -reportprogress|300|-work|work_rng|-stats=none|/home/miguel/Documents/blackjack_mdf/modelsim/rng_tb.v|
+!i113 1
+R3
+R4
+vtop
+!s110 1575476415
+!i10b 1
+!s100 bO;1Xd`6MdH?<GRG@O8DU2
+I_]>7kIDd8W=k4PI8=gR]92
+R1
+R0
+w1575476411
+R5
+R6
+L0 3
+R2
+r1
+!s85 0
+31
+!s108 1575476415.000000
+!s107 /home/miguel/Documents/blackjack_mdf/modelsim/rng_tb.v|
+R7
+!i113 1
+R3
+R4

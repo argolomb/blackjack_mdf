@@ -1,0 +1,8 @@
+/home/miguel/Documents/blackjack_mdf/modelsim/rng.v {1 {vlog -work work_rng -stats=none /home/miguel/Documents/blackjack_mdf/modelsim/rng.v
+Model Technology ModelSim - Intel FPGA Edition vlog 10.5b Compiler 2016.10 Oct  5 2016
+-- Compiling module rng
+
+Top level modules:
+	rng
+
+} {} {}}
