@@ -91,7 +91,7 @@ always @(posedge clk or negedge reset)
  
       begin
  
-      if (loadseed_i )
+      if (loadseed_i)
  
          begin
  
@@ -246,7 +246,7 @@ always @(posedge clk or negedge reset)
  
    end
 //combinate:
-always @(posedge enable or negedge reset)
+always @(posedge clk or negedge reset)
  
    begin
  
@@ -261,9 +261,8 @@ always @(posedge enable or negedge reset)
    else 
  
       begin
- 
-      number_o  = (LFSR_reg [31:0]^CASR_reg[31:0])%6'b101111;
- 
+            number_o  = (LFSR_reg [31:0]^CASR_reg[31:0])%52;
+         
       end
  
    end

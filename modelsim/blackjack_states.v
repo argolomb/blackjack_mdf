@@ -1,12 +1,9 @@
 module blackjack_states
 (
-	input	clk, reset, hit, stay, shuffle_ok,
+	input	clk, reset, hit, stay, loadseed_i,
 
-	output reg card_out,mem_ctrl_rd, mem_ctrl_wr, win, lose, tie, 
+	output reg win, lose, tie, 
 	
-	input [3:0] card_in, 
-	output reg [5:0] card_ctrl,
-
 	output reg [7:0] player_hand,
 	output reg [7:0] dealer_hand,
 
@@ -15,8 +12,7 @@ module blackjack_states
  );
 	// Declare state register
 	reg	[2:0]state;
-	reg [5:0]mem_addr;
-	reg [4:0]sum_d, sum_p;
+	reg [4:0]sum_d, sum_p, sum_d_aux;
 
 	reg bj_p, 
 	bj_d, 
@@ -27,7 +23,6 @@ module blackjack_states
 	stay_d,
 	stay_d_wire,
 	stay_p, 
-	mix_cards, 
 	hit_d, 
 	hit_d_wire,
 	hit_p, 
@@ -37,18 +32,23 @@ module blackjack_states
 	burst_d_wire;
 
 
-    //wire shuffle_ok;
-    wire [7:0] card;
-	// Declare states
-// deck deck_0(
-// 		.clk(clk) ,
-// 		.reset(reset) ,
-// 		.mix_cards(mix_cards),
-//     	.card_ctrl(card_ctrl),        
-//     	.card(card),
-// 		.shuffle_ok(shuffle_ok)
 
-// );
+    //wire shuffle_ok;
+    wire [3:0] card_in;
+	wire card_rdy;
+	reg [3:0]card_aux;
+	reg get_card;
+	reg flag_stay;
+
+	// Declare states
+deck deck_0(
+		.clk(clk) ,
+		.loadseed_i(loadseed_i),
+		.reset(~reset),
+		.get_card(get_card),
+		.card_rdy(card_rdy),
+		.card_out(card_in)
+);
 	
 	//PL_CARDx == PLAYER CARD; DL_CARDx=DEALER CARD; PL_TURN=PLAYER TURN;DL_TURN=DEALER TURN
 	
@@ -63,7 +63,7 @@ module blackjack_states
 		else
 			case (state)
 				START:
-					if(shuffle_ok)
+					if(card_rdy)
 					begin
 						state <= PL_CARD1;
 					end
@@ -72,14 +72,30 @@ module blackjack_states
 					state<=START;  
 					end
 				PL_CARD1:
+					if (card_rdy) begin
+					
 					state <= DL_CARD1;
-				
+					end
+					else begin
+					  state<=PL_CARD1;
+					end
+
+
 				DL_CARD1:
-					state <= PL_CARD2;
-				
+					if(card_rdy) begin
+						state <= PL_CARD2;
+					end
+					else begin
+						state<=DL_CARD1;
+					end
 				PL_CARD2:
-					state <= DL_CARD2;
-		
+					if(card_rdy) begin
+						state <= DL_CARD2;
+					end
+					else begin
+						state<=PL_CARD2;
+					end
+
 				DL_CARD2: //GAME OR PL_TURN 
 					if(bj_d || bj_p)
 						begin
@@ -91,18 +107,18 @@ module blackjack_states
 						end
 				PL_TURN: 
 					begin //GAME OR DL_TURN OR PL_TURN
-						if(burst_p_wire)
+						if(burst_p_wire || burst_d_wire)
 							begin
 								state<=GAME;
 							end
-						else if(stay)
+						else if(stay || hit_p)
 								begin
 									state<=DL_TURN;
 								end
-						else
-							begin
-								state<=PL_TURN;
-							end
+							else
+								begin
+									state<=PL_TURN;
+								end
 							
 					end 
 
@@ -114,6 +130,11 @@ module blackjack_states
 						begin
 							state<=GAME;
 						end
+					
+					else if(flag_stay || hit_d) begin
+						state<=PL_TURN;
+					end
+
 					else
 						begin
 							state<=DL_TURN;
@@ -128,9 +149,6 @@ module blackjack_states
 		case (state)
 			START: // START DECK 
 				begin
-					mix_cards <= 1;	
-					mem_addr <= 0;
-					mem_ctrl_rd <= 1;
 					sum_p<=0;
 					sum_d<=0;
 					has_ace_p<=0;
@@ -138,113 +156,129 @@ module blackjack_states
 					win=0;
 					lose=0;
 					tie=0;
+					get_card<=1;
+					flag_stay<=0;
 									
 				end
 			PL_CARD1: //GET A CARD				
-				if(card_in == 11)
+				if(card_aux == 11)
 				begin
-					sum_p<=sum_p+card_in-1;
+					sum_p<=sum_p+card_aux-1;
 					has_ace_p<=1;
-					mem_addr<=mem_addr+1;
+					
 				end
 				else
 					begin
-					sum_p<=sum_p+card_in;
-					mem_addr<=mem_addr+1;
+					sum_p<=sum_p+card_aux;
+					
 				end
 				
 			DL_CARD1: //GET A CARD
-				if(card_in == 11)
+				if(card_aux == 11)
 					begin
-						sum_d<=sum_d+card_in-1;
+						sum_d<=sum_d+card_aux-1;
 						has_ace_d<=1;
-						mem_addr<=mem_addr+1;
+						
 					end
 				else
 					begin
-						sum_d<=sum_d+card_in;
-						mem_addr<=mem_addr+1;
+						sum_d<=sum_d+card_aux;
+						
 					end
 					
 			PL_CARD2: //GET A CARD **** SET PLAYER HAND **** 
-				if(card_in == 11)
-					begin
-						sum_p<=sum_p+card_in-1;
-						has_ace_p<=1;
-						mem_addr<=mem_addr+1;
+				begin
+					if(card_aux == 11)
+						begin
+							sum_p<=sum_p+card_aux-1;
+							has_ace_p<=1;
+							
+						end
+					else if (card_aux == 1 && has_ace_p) 
+						begin
+							sum_p<=sum_p+11;
+						end
+					else begin
+						sum_p=sum_p+card_aux;
 					end
-				else if (card_in == 1 && has_ace_p) 
-					begin
-						sum_p=sum_p+11;
-					end
-					
+				end
 			DL_CARD2: //GET A CARD **** SET DEALER HAND
-				if(card_in == 11)
-					begin
-						sum_d<=sum_d+card_in-1;
-						has_ace_d<=1;
-						mem_addr<=mem_addr+1;
-					end
-				else if (card_in == 1 && has_ace_d) 
-					begin
-						sum_p=sum_p+11;
-					end
-				else
-					begin
-						sum_d<=sum_d+card_in;
-						mem_addr<=mem_addr+1;
-					end
-
+				begin
+					get_card=0;
+					if(card_aux == 11)
+						begin
+							sum_d<=sum_d+card_aux-1;
+							has_ace_d<=1;
+							
+						end
+					else if (card_aux == 1 && has_ace_d) 
+						begin
+							sum_p<=sum_p+11;
+						end
+					else
+						begin
+							sum_d<=sum_d+card_aux;
+							
+						end
+				end
 			PL_TURN: //WAIT FOR HIT OR STAY BUTTON IF SUM 				
-			
 				if ((hit && ~burst_p_wire)||(stay_d)) begin
+					get_card<=1;
 					if(card_in == 11)
 						begin
 							sum_p<=sum_p+card_in-1;
 							has_ace_p<=1;
-							mem_addr<=mem_addr+1;
+							flag_stay<=0;
+							
 						end
 					if (card_in == 1 && has_ace_p) 
 						begin
-							sum_p=sum_p+11;
+							sum_p<=sum_p+11;
+							flag_stay<=0;
 						end
 					else
 						begin
 							sum_p<=sum_p+card_in;
-							mem_addr<=mem_addr+1;
+							flag_stay<=0;
 						end					
 				end		
 			
 			DL_TURN: ////WAIT FOR HIT OR STAY BUTTON IF SUM < 21 ELSE BURST_DEALER **** PLAYER WON
 				begin
-					if ((hit_d && ~burst_d_wire)||(stay)) begin
-						if(card_in == 11)
+					get_card=0;
+					if(card_rdy) begin
+						if ((hit_d && ~burst_d_wire)||(stay)||(~flag_stay)) begin
+							if(card_in == 11)
+								begin
+									sum_d<=sum_d+card_in-1;
+									has_ace_d<=1;
+									flag_stay<=1;
+								end
+							if (card_in == 1 && has_ace_d) 
+								begin
+									sum_d=sum_d+11;
+									flag_stay<=1;
+								end
+							else
+								begin
+									sum_d<=sum_d+card_in;
+									flag_stay<=1;									
+								end					
+						end				
+					
+						else if (sum_d_aux<=16 && ~stay)
 							begin
-								sum_d<=sum_d+card_in-1;
-								has_ace_d<=1;
-								mem_addr<=mem_addr+1;
+								hit_d_wire<=1;
+								stay_d_wire<=0;
+								flag_stay<=1;
 							end
-						if (card_in == 1 && has_ace_d) 
+						else if (sum_d_aux>=17) 
 							begin
-								sum_d=sum_d+11;
+								stay_d_wire<=1;
+								hit_d_wire<=0;
+								flag_stay<=1;
 							end
-						else
-							begin
-								sum_d<=sum_d+card_in;
-								mem_addr<=mem_addr+1;
-							end					
-					end				
-				
-					else if (sum_d<=16)
-						begin
-							hit_d_wire<=1;
-							stay_d_wire<=0;
-						end
-					else if (sum_d>=17) 
-						begin
-							stay_d_wire<=1;
-							hit_d_wire<=0;
-						end
+					end
 				end
 
 			 /*
@@ -257,7 +291,7 @@ module blackjack_states
 				if((sum_d == sum_p)||(burst_p_wire && burst_d_wire))
 					begin
 						tie<=1;
-					end
+					end	
 				else if ((sum_d==21 && sum_p<21)||(burst_p_wire)) 
 					begin
 						lose<=1;
@@ -275,8 +309,7 @@ always @ (*) begin
 	burst_d_wire=0;
 	bj_p_wire=0;
 	bj_d_wire=0;
-	stay_d_wire=0;
-	hit_d_wire=0;
+
 
 	if(sum_p>21) 
 		begin
@@ -301,8 +334,11 @@ always @ (posedge clk) begin
 	burst_d<=burst_d_wire;
 	bj_p<=bj_p_wire;
 	bj_d<=bj_d_wire;
+	hit_p<=hit;
 	hit_d<=hit_d_wire;
 	stay_d<=stay_d_wire;
-end
+	card_aux<=card_in;
+	sum_d_aux<=sum_d;
+	end
 
 endmodule
